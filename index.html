@@ -2,32 +2,70 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Daily Fun Grid</title>
+<title>Fun Picker Game</title>
 
 <style>
-/* 🌈 Animated background */
+/* 🌌 BACKGROUND */
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
   color: white;
   text-align: center;
-  background: linear-gradient(-45deg, #1e3a8a, #9333ea, #0ea5e9, #22c55e);
-  background-size: 400% 400%;
-  animation: gradientBG 10s ease infinite;
+  overflow-x: hidden;
+  background: radial-gradient(circle at center, #020617 0%, #000 100%);
 }
 
-@keyframes gradientBG {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* Neon grid */
+body::before {
+  content: "";
+  position: fixed;
+  width: 200%;
+  height: 200%;
+  top: -50%;
+  left: -50%;
+  background-image:
+    linear-gradient(rgba(0,255,255,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,255,0.08) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: moveGrid 15s linear infinite;
+  z-index: -2;
+}
+
+@keyframes moveGrid {
+  0% { transform: translate(0,0); }
+  100% { transform: translate(50px,50px); }
+}
+
+/* Floating dots */
+body::after {
+  content: "";
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(34,197,94,0.2) 2px, transparent 2px);
+  background-size: 100px 100px;
+  animation: floatDots 10s linear infinite;
+  z-index: -1;
+}
+
+@keyframes floatDots {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-100px); }
 }
 
 h1 {
-  padding: 20px;
-  font-size: 28px;
+  padding: 15px;
+  font-size: 30px;
+  text-shadow: 0 0 10px #22c55e;
 }
 
-/* Grid */
+#timer {
+  margin-top: -10px;
+  font-size: 18px;
+  color: #a7f3d0;
+}
+
+/* GRID */
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -37,28 +75,39 @@ h1 {
   margin: auto;
 }
 
-/* Card container (for flip) */
+/* CARD */
 .card {
   perspective: 1000px;
 }
 
-/* Inner card */
+/* INNER */
 .card-inner {
   position: relative;
   width: 100%;
-  height: 120px;
-  text-align: center;
-  transition: transform 0.6s;
+  height: 130px;
   transform-style: preserve-3d;
+  transition: transform 0.6s, box-shadow 0.3s;
   cursor: pointer;
+  border-radius: 15px;
 }
 
-/* Flip effect */
+/* Hover glow */
+.card-inner:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 20px rgba(34,197,94,0.8);
+}
+
+/* Press effect */
+.card:active .card-inner {
+  transform: scale(0.95);
+}
+
+/* Flip */
 .card.flipped .card-inner {
   transform: rotateY(180deg);
 }
 
-/* Front + back */
+/* SIDES */
 .card-front, .card-back {
   position: absolute;
   width: 100%;
@@ -67,32 +116,69 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px;
+  padding: 12px;
   backface-visibility: hidden;
+  font-size: 15px;
 }
 
-/* Glass look */
+/* Front */
 .card-front {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
+/* Back */
 .card-back {
-  background: rgba(34, 197, 94, 0.9);
+  background: linear-gradient(135deg, #22c55e, #4ade80);
   color: black;
   transform: rotateY(180deg);
+  box-shadow: 0 0 20px rgba(34,197,94,0.8);
 }
 
-/* Hover effect */
-.card-inner:hover {
-  transform: scale(1.05);
+/* ✨ Reveal animation */
+.card.flipped .card-back {
+  animation: revealFlash 0.4s ease;
+}
+
+@keyframes revealFlash {
+  0% { transform: scale(0.8) rotateY(180deg); opacity: 0; }
+  50% { transform: scale(1.1) rotateY(180deg); }
+  100% { transform: scale(1) rotateY(180deg); opacity: 1; }
+}
+
+/* 🌟 RARE CARDS */
+.card.rare .card-front {
+  border: 2px solid gold;
+  box-shadow: 0 0 15px gold;
+}
+
+.card.rare .card-back {
+  background: linear-gradient(135deg, gold, orange);
+  box-shadow: 0 0 25px gold;
+}
+
+/* Sparkle */
+.card.rare .card-inner::after {
+  content: "✨";
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  font-size: 18px;
+  animation: sparkle 1.5s infinite;
+}
+
+@keyframes sparkle {
+  0%,100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.3); }
 }
 </style>
 </head>
 
 <body>
 
-<h1>🎲 Today's Fun Picker</h1>
+<h1>🎲 Fun Picker Game</h1>
+<h3 id="timer">⏳ Next shuffle in: 300s</h3>
 
 <div class="grid" id="grid"></div>
 
@@ -114,19 +200,33 @@ const topics = [
 
 const grid = document.getElementById("grid");
 
-// Shuffle
+/* 🔊 Sounds */
+const flipSound = new Audio("https://www.soundjay.com/buttons/sounds/button-16.mp3");
+const rareSound = new Audio("https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3");
+
+/* Shuffle */
 function shuffle(array) {
   return array.sort(() => Math.random() - 0.5);
 }
 
-// Render
+/* Render */
 function renderGrid() {
   grid.innerHTML = "";
   const shuffled = shuffle([...topics]);
 
-  shuffled.forEach((topic) => {
+  // pick rare cards
+  const rareIndexes = new Set();
+  while (rareIndexes.size < 2) {
+    rareIndexes.add(Math.floor(Math.random() * shuffled.length));
+  }
+
+  shuffled.forEach((topic, index) => {
     const card = document.createElement("div");
     card.className = "card";
+
+    if (rareIndexes.has(index)) {
+      card.classList.add("rare");
+    }
 
     card.innerHTML = `
       <div class="card-inner">
@@ -136,20 +236,43 @@ function renderGrid() {
     `;
 
     card.onclick = () => {
-      card.classList.toggle("flipped");
+      const flipped = card.classList.toggle("flipped");
+
+      flipSound.currentTime = 0;
+      flipSound.play();
+
+      if (flipped && card.classList.contains("rare")) {
+        rareSound.currentTime = 0;
+        rareSound.play();
+      }
+
+      if (navigator.vibrate) {
+        navigator.vibrate(30);
+      }
     };
 
     grid.appendChild(card);
   });
 }
 
-// Initial load
+/* Initial */
 renderGrid();
 
-// 🔄 Reshuffle every 5 minutes
-setInterval(() => {
-  renderGrid();
-}, 300000);
+/* ⏳ Timer */
+let timeLeft = 300;
+const timerEl = document.getElementById("timer");
+
+function updateTimer() {
+  timerEl.innerText = `⏳ Next shuffle in: ${timeLeft}s`;
+  timeLeft--;
+
+  if (timeLeft < 0) {
+    renderGrid();
+    timeLeft = 300;
+  }
+}
+
+setInterval(updateTimer, 1000);
 </script>
 
 </body>

@@ -2,93 +2,154 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Daily Topic Grid</title>
+<title>Daily Fun Grid</title>
 
 <style>
+/* 🌈 Animated background */
 body {
-  font-family: Arial, sans-serif;
-  background: #0f172a;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
   color: white;
   text-align: center;
-  margin: 0;
+  background: linear-gradient(-45deg, #1e3a8a, #9333ea, #0ea5e9, #22c55e);
+  background-size: 400% 400%;
+  animation: gradientBG 10s ease infinite;
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 h1 {
   padding: 20px;
+  font-size: 28px;
 }
 
+/* Grid */
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
+  gap: 20px;
   padding: 20px;
-  max-width: 800px;
+  max-width: 900px;
   margin: auto;
 }
 
+/* Card container (for flip) */
 .card {
-  background: #1e293b;
-  padding: 40px;
-  border-radius: 15px;
+  perspective: 1000px;
+}
+
+/* Inner card */
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  text-align: center;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
   cursor: pointer;
-  transition: 0.3s;
-  font-size: 18px;
 }
 
-.card:hover {
-  background: #334155;
+/* Flip effect */
+.card.flipped .card-inner {
+  transform: rotateY(180deg);
 }
 
-.revealed {
-  background: #22c55e !important;
+/* Front + back */
+.card-front, .card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  backface-visibility: hidden;
+}
+
+/* Glass look */
+.card-front {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.card-back {
+  background: rgba(34, 197, 94, 0.9);
   color: black;
+  transform: rotateY(180deg);
+}
+
+/* Hover effect */
+.card-inner:hover {
+  transform: scale(1.05);
 }
 </style>
 </head>
 
 <body>
 
-<h1>📅 Today's Hidden Topics</h1>
+<h1>🎲 Today's Fun Picker</h1>
 
 <div class="grid" id="grid"></div>
 
 <script>
 const topics = [
-  "🚀 SpaceX milestone",
-  "📜 Historical event",
-  "💡 Startup idea",
-  "🧠 Psychology fact",
-  "🌍 Geography trivia",
-  "📱 Tech update",
-  "🎬 Movie fact",
-  "📚 Book recommendation",
-  "⚽ Sports highlight",
-  "🔬 Science discovery",
-  "🎨 Art inspiration",
-  "💬 Quote of the day"
+  "🎥 Movie Night :- Bollywood 🍿",
+  "🎥 Movie Night :- Hollywood / International 🍿",
+  "🎥 Movie Night :- Anime 🍿",
+  "🎬 Webseries :- Hindi 📺",
+  "🎬 Webseries :- English 📺",
+  "🎬 Webseries :- Anime 📺",
+  "📚 Book Reading 📖",
+  "🎮 Game Time 🎯",
+  "🔬 Explore Together",
+  "▶️ Youtube Music Night 🎧",
+  "▶️ Stand-up Comedy / Singing 🎤",
+  "▶️ Food & Travel Vlogs 🌍🍜"
 ];
 
-// Shuffle topics daily
+const grid = document.getElementById("grid");
+
+// Shuffle
 function shuffle(array) {
   return array.sort(() => Math.random() - 0.5);
 }
 
-const shuffled = shuffle([...topics]);
+// Render
+function renderGrid() {
+  grid.innerHTML = "";
+  const shuffled = shuffle([...topics]);
 
-const grid = document.getElementById("grid");
+  shuffled.forEach((topic) => {
+    const card = document.createElement("div");
+    card.className = "card";
 
-shuffled.forEach((topic, index) => {
-  const card = document.createElement("div");
-  card.className = "card";
-  card.innerText = "Click to Reveal";
+    card.innerHTML = `
+      <div class="card-inner">
+        <div class="card-front">❓ Tap</div>
+        <div class="card-back">${topic}</div>
+      </div>
+    `;
 
-  card.onclick = () => {
-    card.innerText = topic;
-    card.classList.add("revealed");
-  };
+    card.onclick = () => {
+      card.classList.toggle("flipped");
+    };
 
-  grid.appendChild(card);
-});
+    grid.appendChild(card);
+  });
+}
+
+// Initial load
+renderGrid();
+
+// 🔄 Reshuffle every 5 minutes
+setInterval(() => {
+  renderGrid();
+}, 300000);
 </script>
 
 </body>
